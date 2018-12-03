@@ -3,7 +3,7 @@ from lxml import etree
 import datetime
 import time
 violations={'tSoliddLine':'/report/targetinfo/tSolidLine/text()','nRedLight':'/report/targetinfo/nRedLight/text()','nWrongDirection':'/report/targetinfo/nWrongDirection/text()','tRoadSide':'/report/targetinfo/tRoadSide/text()','tStopLine':'/report/targetinfo/tStopLine/text()','tOneDirection':'/report/targetinfo/tOneDirection/text()','nOverSpeed':'/report/targetinfo/nOverSpeed/text()'}
-
+forsage={'F401':'[F401]','F402':'[F402]','F403':'[F403]','F404':'[F404]','F405':'[F405]','F406':'[F406]','F407':'[F407]','F408':'[F408]','F409':'[F409]','F410':'[F410]'}
 
 forsage100={'F401':{'tSolidLine':0,'nRedLight':0,'nWrongDirection':0,'tRoadSide':0,'tStopLine':0,'tOneDirection':0,'nOverSpeed':0},
 'F402':{'tSolidLine':0,'nRedLight':0,'nWrongDirection':0,'tRoadSide':0,'tStopLine':0,'tOneDirection':0,'nOverSpeed':0},
@@ -41,6 +41,8 @@ def s_viol (treexml):
         if (treexml.xpath(lang1))==['1']:
             print((treexml.xpath('/report/targetinfo/tDeviceSerial/text()')))
             print(lang)
+            list_in.append((treexml.xpath('/report/targetinfo/tDeviceSerial/text()')))
+            list_in.append(lang)
          #   list_in.append(treexml.xpath('/report/targetinfo/tDeviceSerial/text()'))
         #if (treexml.xpath(lang.keys())) == ['1']:
             #print (lang1)
@@ -83,6 +85,9 @@ for rootdir, dirs, files in os.walk(path): #парсинг пути
                     #if (tree.xpath('/report/targetinfo/tSolidLine/text()')) == ['1']:
                      #   solid = solid+1
                       #  print ('test',solid)
-                       # print(tree.xpath('/report/targetinfo/tSolidLine/text()'))
-#print(*list_in)
+# print(tree.xpath('/report/targetinfo/tSolidLine/text()'))
+for i in list_in:
+    for n in forsage.values():
+            if i==n:
+                print('TEST',i)
 #print (forsage['F401']['tSolidLine'])
