@@ -3,7 +3,7 @@ from lxml import etree
 import datetime
 import time
 violations={'tSoliddLine':'/report/targetinfo/tSolidLine/text()','nRedLight':'/report/targetinfo/nRedLight/text()','nWrongDirection':'/report/targetinfo/nWrongDirection/text()','tRoadSide':'/report/targetinfo/tRoadSide/text()','tStopLine':'/report/targetinfo/tStopLine/text()','tOneDirection':'/report/targetinfo/tOneDirection/text()','nOverSpeed':'/report/targetinfo/nOverSpeed/text()'}
-
+forsage={'F401':['F401'],'F402':['F402'],'F403':['F403'],'F404':['F404'],'F405':['F405'],'F406':['F406'],'F407':['F407'],'F408':['F408'],'F409':['F409'],'F410':['F410'],'F413':['F413']}
 
 forsage100={'F401':{'tSolidLine':0,'nRedLight':0,'nWrongDirection':0,'tRoadSide':0,'tStopLine':0,'tOneDirection':0,'nOverSpeed':0},
 'F402':{'tSolidLine':0,'nRedLight':0,'nWrongDirection':0,'tRoadSide':0,'tStopLine':0,'tOneDirection':0,'nOverSpeed':0},
@@ -25,6 +25,8 @@ list_in=[]
 #tOneDirection='./targetinfo/tOneDirection'
 #nOverSpeed='./targetinfo/nOverSpeed'    #12.9
 path='C:\\Python27/'
+def listToStringWithoutBrackets(list1):
+    return str(list1).replace('[','').replace(']','')
 def unixtime (timestamp): #из 28.10.2018 10:20:30 в юникс время
      timestamp =int(timestamp)
      value= datetime.datetime.fromtimestamp(timestamp)
@@ -39,8 +41,13 @@ def timeunix (d,m,y,hh,mm,ss): #из юникс времени в формат t
 def s_viol (treexml):
     for lang,lang1 in violations.items():
         if (treexml.xpath(lang1))==['1']:
-            print((treexml.xpath('/report/targetinfo/tDeviceSerial/text()')))
-            print(lang)
+            for lang2,lang3 in forsage.items():
+                #print((treexml.xpath('/report/targetinfo/tDeviceSerial/text()')))
+                if (treexml.xpath('/report/targetinfo/tDeviceSerial/text()'))==lang3:
+                    #print(lang)
+                    #list_in.append((treexml.xpath('/report/targetinfo/tDeviceSerial/text()')))
+                    list_in.append(lang2)
+                    list_in.append(lang)
          #   list_in.append(treexml.xpath('/report/targetinfo/tDeviceSerial/text()'))
         #if (treexml.xpath(lang.keys())) == ['1']:
             #print (lang1)
@@ -58,7 +65,7 @@ end_d=28
 end_m=11
 end_y=2018
 end_hh=9
-end_mm=25
+end_mm=40
 end_ss=00
 print(end_d,' ',end_m,' ',end_y,' ',end_hh,' ',end_mm,' ',end_ss)
 starttime=int(timeunix(start_d,start_m,start_y,start_hh,start_mm,start_ss))
@@ -83,6 +90,14 @@ for rootdir, dirs, files in os.walk(path): #парсинг пути
                     #if (tree.xpath('/report/targetinfo/tSolidLine/text()')) == ['1']:
                      #   solid = solid+1
                       #  print ('test',solid)
-                       # print(tree.xpath('/report/targetinfo/tSolidLine/text()'))
-#print(*list_in)
-#print (forsage['F401']['tSolidLine'])
+# print(tree.xpath('/report/targetinfo/tSolidLine/text()'))
+print(list_in)
+#ss=listToStringWithoutBrackets(list_in) #создаем из списка строкуи удаляем квадратные скобки[ ]
+#print (ss)
+#list_out = ss.split(',') # из строки создаем список
+#print(list_out)
+#print(list_out[2])
+for i in list_in:
+    for n,b in forsage.items():
+            if i==n:
+                print('TEST',i)
