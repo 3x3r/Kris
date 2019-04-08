@@ -1,10 +1,15 @@
 import os
+import re
 from lxml import etree
 import datetime
 import time
 import openpyxl
-wb = openpyxl.load_workbook(filename='C:\\Python27/upload.xlsx')
-sheet = wb['Лист1']
+import psycopg2.extras
+conn = psycopg2.connect("dbname='forsage' user='postgres'" " host='localhost' password='856452'")
+sql2=("INSERT INTO customers (uid,deviceserial,speed,ndatatime,license,violations) VALUES (%s,%s,%s,%s,%s,%s)")
+cur = conn.cursor()
+#wb = openpyxl.load_workbook(filename='C:\\Python27/upload.xlsx')
+#sheet = wb['Лист1']
 violations={'tSolidLine':'/report/targetinfo/tSolidLine/text()','nRedLight':'/report/targetinfo/nRedLight/text()','nWrongDirection':'/report/targetinfo/nWrongDirection/text()','tRoadSide':'/report/targetinfo/tRoadSide/text()','nStopLine':'/report/targetinfo/nStopLine/text()','tOneDirection':'/report/targetinfo/tOneDirection/text()','nOverSpeed':'/report/targetinfo/nOverSpeed/text()'}
 forsage={'F401':['F401'],'F402':['F402'],'F403':['F403'],'F404':['F404'],'F405':['F405'],'F406':['F406'],'F407':['F407'],'F408':['F408'],'F409':['F409'],'F410':['F410'],'F413':['F413']}
 forsage100={'F401':{'tSolidLine':0,'nRedLight':0,'nWrongDirection':0,'tRoadSide':0,'nStopLine':0,'tOneDirection':0,'nOverSpeed':0},
@@ -26,6 +31,15 @@ forsage100={'F401':{'tSolidLine':0,'nRedLight':0,'nWrongDirection':0,'tRoadSide'
 #tOneDirection='./targetinfo/tOneDirection'
 #nOverSpeed='./targetinfo/nOverSpeed'    #12.9
 path='C:\\Python27/'
+def listToStringWithoutBrackets(list1):
+    return str(list1).replace('[','').replace(']','')
+def listToStringWithoutBrackets2(list1):
+    return str(list1).replace(''''','"').replace(''''','"')
+def convertTimestampToSQLDateTime(value):
+    return time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(value))
+
+def convertSQLDateTimeToTimestamp(value):
+    return time.mktime(time.strptime(value, '%Y-%m-%d %H:%M:%S'))
 def unixtime (timestamp): #из 28.10.2018 10:20:30 в юникс время
      timestamp =int(timestamp)
      value= datetime.datetime.fromtimestamp(timestamp)
@@ -40,12 +54,25 @@ def timeunix (d,m,y,hh,mm,ss): #из юникс времени в формат t
     print(repr(int(timestamp)))
     return (timestamp)
 def s_viol (treexml):
+    uid=treexml.xpath('/report/targetinfo/tTargetGlobalUID/text()')
+    devs=listToStringWithoutBrackets(treexml.xpath('/report/targetinfo/tDeviceSerial/text()'))
+    sped = listToStringWithoutBrackets(treexml.xpath('/report/targetinfo/nDisplaySpeed/text()'))
+    #sped = listToStringWithoutBrackets2(sped)
+    #re.sub("^\s+|\n|\'|\s+$", '', sped)
+    #print(sped)
+    #if sped==['0']:
+    #    sped=0
+    for node in tree.iterfind('./targetinfo/nDatetime'):  # поиск элементов
+        dtime = int(node.text)
+        date_time_str=unixtime(dtime)
+        dtime=convertTimestampToSQLDateTime(dtime)
+        #date_time_obj = datetime.datetime.strptime(date_time_str, '%d-%m-%Y %H:%M:%S')
+    tnumber=listToStringWithoutBrackets(treexml.xpath('/report/targetinfo/tLicenseNumber/text()'))
     for lang,lang1 in violations.items():  #проход по дереву XML и посик нарушений
         if (treexml.xpath(lang1))==['1']:   # если найден путь в дереве берем его значение и сравниеваем
-            for lang2,lang3 in forsage.items(): # поиск номера форсажа
-                if (treexml.xpath('/report/targetinfo/tDeviceSerial/text()'))==lang3: #если наден номер форсажа сравниеваем его со списком
-                    k=forsage100[lang2][lang]       #присваиваем текущее значение ключ:значение forsage[401][tSolidLine] буферной переменной
-                    forsage100[lang2][lang]=k+1     #добавляем к текущему значению +1
+            data=((listToStringWithoutBrackets(treexml.xpath('/report/targetinfo/tTargetGlobalUID/text()'))),devs,sped,dtime,tnumber,lang)
+            cur.execute(sql2, data)
+            conn.commit()
     return ()
 print ('Начало поиска дата месяц год часы минуты секунды')
 start_d=10
@@ -56,7 +83,7 @@ start_mm=00
 start_ss=00
 print(start_d,' ',start_m,' ',start_y,' ',start_hh,' ',start_mm,' ',start_ss)
 print('Конец поиска дата месяц год часы минуты секунды')
-end_d=11
+end_d=15
 end_m=12
 end_y=2018
 end_hh=0
@@ -76,14 +103,15 @@ for rootdir, dirs, files in os.walk(path): #парсинг пути
                 if (data>= starttime and data<= endtime):
                     s_viol(tree)
 #sheet['B2'] = 'test'
-for x in forsage100.keys():
+#for x in forsage100.keys():
     #print (forsage100[x])
     #for z in forsage100[x].keys():
 #    print ('Test2222',x,forsage100[x]['nRedLight'])
-    sheet.append([str(start_d)+'-'+str(start_m)+'-'+str(start_y)+' '+str(start_hh)+':'+str(start_mm)+':'+str(start_ss),str(end_d)+'-'+str(end_m)+'-'+str(end_y)+' '+str(end_hh)+':'+str(end_mm)+':'+str(end_ss),x,forsage100[x]['tSolidLine'],forsage100[x]['nRedLight'],forsage100[x]['nWrongDirection'],forsage100[x]['tRoadSide'],forsage100[x]['nStopLine'],forsage100[x]['tOneDirection'],forsage100[x]['nOverSpeed']])
+#    sheet.append([str(start_d)+'-'+str(start_m)+'-'+str(start_y)+' '+str(start_hh)+':'+str(start_mm)+':'+str(start_ss),str(end_d)+'-'+str(end_m)+'-'+str(end_y)+' '+str(end_hh)+':'+str(end_mm)+':'+str(end_ss),x,forsage100[x]['tSolidLine'],forsage100[x]['nRedLight'],forsage100[x]['nWrongDirection'],forsage100[x]['tRoadSide'],forsage100[x]['nStopLine'],forsage100[x]['tOneDirection'],forsage100[x]['nOverSpeed']])
 #print ('TEST11',forsage100.keys())#(['F401', 'F402', 'F403', 'F404', 'F405', 'F406', 'F407', 'F408', 'F409', 'F413'])
 #print('Test3',forsage100['F401'].values()) #([3, 0, 0, 0, 0, 0, 0])
 #print('Test4',forsage100['F401'].keys()) #(['tSolidLine', 'nRedLight', 'nWrongDirection', 'tRoadSide', 'tStopLine', 'tOneDirection', 'nOverSpeed'])
 #print('TEST',forsage100['F401']['tSolidLine'])
 #print(forsage100)
-wb.save('C:\\Python27/upload.xlsx')
+conn.close()
+#wb.save('C:\\Python27/upload.xlsx')
